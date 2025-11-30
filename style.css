@@ -1,0 +1,578 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap');
+
+html,
+body {
+    margin: 0;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    font-family: "Quicksand", sans-serif;
+}
+
+.sky {
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+}
+
+.tv {
+    aspect-ratio: 16 / 9;
+    width: auto;
+    height: 60vh;
+    max-height: 60vh;
+    max-width: 70vw;
+    display: flex;
+    gap: 25px;
+    z-index: 2;
+    position: absolute;
+    background: none;
+    top: 50%;
+    translate: -50% -50%;
+    left: 50%;
+    border: 20px solid rgb(50, 50, 50);
+    z-index: 2;
+    border-radius: 5px;
+    padding: 25px;
+    box-sizing: border-box;
+
+    &::after {
+        content: "PONY";
+        color: white;
+        translate: -50% calc(60vh - 38px);
+        font-size: 0.8em;
+        font-family: 'Times';
+        left: 50%;
+        position: absolute;
+    }
+
+    & .pholder {
+        position: relative;
+        overflow: hidden;
+        border-radius: 5px;
+        aspect-ratio: 1 / 1;
+        height: 100%;
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        align-content: center;
+        align-self: center;
+        justify-content: center;
+        flex-direction: column;
+    }
+
+    & .player {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    & iframe {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 177.77777778vh; /* 16/9 aspect ratio */
+        min-width: 100%;
+        min-height: 100%;
+        border: none;
+    }
+
+    & .data {
+        flex-shrink: 1;
+        flex-grow: 0;
+    }
+
+    & span.title {
+        font-size: 2.4em;
+    }
+
+    & span.artist {
+        font-size: 1.8em;
+    }
+
+
+}
+
+.data {
+    color: white;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    vertical-align: middle;
+    justify-content: center;
+
+    & span.title {
+        color: white;
+        display: block;
+        font-weight: bold;
+    }
+
+    & span.artist {
+        color: white;
+        display: block;
+    }
+}
+
+body:before {
+    background-image: var(--alb);
+    background-size: 180%;
+    background-position: center;
+    backdrop-filter: blur(10px);
+    border-radius: 5px;
+    aspect-ratio: 16 / 9;
+    width: auto;
+    height: 60vh;
+    max-height: 60vh;
+    max-width: 70vw;
+    content: ' ';
+    top: 50%;
+    translate: -50% -50%;
+    box-sizing: border-box;
+    border: 20px solid black;
+    left: 50%;
+    z-index: 1;
+    display: block;
+    border-radius: 5px;
+    position: absolute;
+    filter: blur(10px) brightness(90%);
+}
+
+
+.pholder::before {
+    content: ' ';
+    display: block;
+    background-image: var(--alb);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    border-radius: 5px;
+    opacity: 0;
+    z-index: 100;
+    position: absolute;
+}
+
+.pholder.paused::before {
+    position: absolute;
+    opacity: 1;
+}
+
+.pholder.paused iframe {
+    display: none;
+}
+
+.prog {
+    z-index: 500;
+    flex-shrink: 0;
+    flex-grow: 1;
+    translate: 0 -12px;
+    width: calc(100% + 2px);
+    box-sizing: border-box;
+    display: block;
+}
+
+.remote {
+    z-index: 500;
+    color: white;
+    position: absolute;
+    right: 25px;
+    bottom: -65%;
+    border: 5px solid #2E2E2E;
+    border-radius: 15px;
+    aspect-ratio: 9 / 21;
+    height: 70vh;
+    box-shadow: 0px 0px 20px rgba(0, 0, 0, 1);
+
+    /* translate: 0% -50%; */
+    background-image: radial-gradient(50.11% 49.64% at 50% 49.89%, #1d1d1d 17.83%, #000000 100%);
+    overflow: hidden;
+    transition: bottom ease-in-out 0.1s;
+}
+
+.remote:hover {
+    bottom: 25px;
+}
+
+.remote * {
+    transition: opacity ease-in-out 1s;
+    opacity: 0;
+}
+
+.remote:hover * {
+    opacity: 1;
+
+}
+
+.remote::before {
+    content: ' ';
+    display: block;
+    width: 20px;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    background: radial-gradient(50.11% 49.64% at 50% 49.89%, #364355 17.83%, #000000 100%);
+    border: 0.3px solid #161616;
+    box-shadow: 0px 0px 4px rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+    position: relative;
+    left: 50%;
+    top: 5px;
+    z-index: 9999;
+    translate: -50% 0%;
+}
+
+.remote::after {
+    content: ' ';
+    display: block;
+    background-color: transparent;
+    width: calc(30vh + 20px);
+    height: 100px;
+    position: fixed;
+    right: 25px;
+    bottom: 0px;
+    z-index: -15;
+
+}
+
+.remote .playerbar {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    width: 100%;
+    height: 8%;
+    bottom: 0px;
+    position: absolute;
+    border-radius: 15px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
+    background: #670325;
+    box-shadow: 0px -2px 4px rgba(255, 255, 255, 0.25);
+    padding: 5px;
+    white-space: nowrap;
+    /* Prevents text from wrapping to the next line */
+    overflow: hidden;
+    /* Hides any content that overflows the element's box */
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+}
+
+.remote .playerbar>*:not(.alb) {
+    min-width: 0;
+    /* allows flex items to shrink below their content */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.remote .playerbar .data {
+    max-width: calc(100% - 50px);
+}
+
+.remote .playerbar .alb {
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Make non-data items square and keep the `.data` area centered */
+.remote .playerbar>*:not(.data) {
+    flex: 0 0 auto;
+    height: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.remote .playerbar button {
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.9);
+    border: 0px;
+}
+
+.remote .playerbar button * {
+    font-size: 2.5em;
+}
+
+.remote .playerbar .data {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.playerbar .data * {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.tv:has(.paused) .prog {
+    display: none;
+}
+
+body:has(.paused) .pause-only {
+    display: block;
+}
+
+body:not(:has(.paused)) .pause-only {
+    display: none;
+}
+
+body:has(.paused) .play-only {
+    display: none;
+}
+
+body:not(:has(.paused)) .play-only {
+    display: block;
+}
+
+.playlists {
+    list-style-type: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0px;
+    padding: 10px;
+}
+
+.playlists li {
+    display: block;
+    background-color: #670325;
+    border-radius: 5px;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    gap: 10px;
+    vertical-align: middle;
+    align-items: center;
+    max-height: 3em;
+    max-height: 50px;
+
+    & img {
+        aspect-ratio: 1 / 1;
+        /* min-height: 50px; */
+        /* min-width: 50px; */
+        height: 50px;
+        /* width: auto; */
+        /* max-height: 2ch; */
+        object-fit: cover;
+    }
+
+    & span {
+        font-size: 1.2em;
+        vertical-align: middle;
+        white-space: nowrap;
+        /* Prevents text from wrapping to the next line */
+        overflow: hidden;
+        /* Hides any content that overflows the element's box */
+        text-overflow: ellipsis;
+    }
+}
+
+/* Ensure playlist text is vertically centered inside the flex row */
+.playlists li span {
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+    font-weight: bold;
+    line-height: normal;
+}
+
+.fc {
+    width: 100%;
+    background-color: #670325;
+    height: 70vh;
+    padding: 25px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: absolute;
+    align-items: center;
+    transition: top ease-in-out 0.2s;
+    top: 0px;
+    translate: 0 0px;
+    gap: 10px;
+}
+
+.fc .controls {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    justify-content: center;
+    align-items: center;
+}
+
+.fc .controls * {
+    background-color: #fff;
+    border-radius: 100%;
+    aspect-ratio: 1 / 1;
+    border: 0px;
+    vertical-align: middle;
+    height: fit-content;
+
+    & * {
+        font-size: 3em;
+    }
+}
+
+.fc .controls .ppbtn * {
+    font-size: 4em;
+}
+
+.fc>* {
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.fc .data {
+    height: fit-content;
+}
+
+.fc .alb {
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    height: auto;
+    background-position: center;
+    background-size: auto 100%;
+    border-radius: 10px;
+}
+
+.fc .data {
+    text-align: center;
+    font-size: 1.5em;
+}
+
+.remote:not(.fcplayer) .fc {
+    top: 100%;
+}
+
+.remote .playerbar {
+    bottom: 0%;
+    transition: bottom ease 0.1s;
+
+}
+
+.remote.fcplayer .playerbar {
+    bottom: -100%;
+}
+
+.remote .playlists {
+    top: 0%;
+    position: relative;
+    transition: top ease 0.1s;
+}
+
+.remote.fcplayer .playlists {
+    top: -100%;
+}
+
+button * {
+    pointer-events: none;
+}
+
+.remote .statusbar {
+    position: absolute;
+    top: 0px;
+    width: calc(100% - 10px);
+    font-weight: bold;
+    gap: 2px;
+    flex-wrap: nowrap;
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+
+    & * {
+        width: fit-content;
+    }
+
+    & .time {
+        /* width: calc(100%); */
+    }
+}
+
+body:has(.notplayed) .tv:not(.notplayed),
+body:has(.notplayed) .playerbar {
+    display: none;
+}
+
+@keyframes bounce {
+    0% {
+        margin-bottom: 0px;
+    }
+
+    50% {
+        margin-bottom: 50px;
+    }
+
+    100% {
+        margin-bottom: 0px;
+    }
+}
+
+.tv.notplayed {
+    display: flex;
+    background-color: #000;
+    color: #fff;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    font-size: 2em;
+    font-weight: bold;
+
+    &:before {
+        z-index: 9999;
+        content: '⬇️ this is the phone (aka remote) ⬇️';
+        position: fixed;
+        right: -425px;
+        bottom: -150px;
+        font-size: 0.6em;
+        animation: bounce 2s ease-in-out 0s infinite both;
+    }
+}
+
+.loader {
+    width: 100%;
+    background-color: #670325;
+    height: 70vh;
+    padding: 25px;
+    box-sizing: border-box;
+    flex-direction: column;
+    justify-content: center;
+    position: absolute;
+    align-items: center;
+    transition: top ease-in-out 0.2s;
+    top: 0px;
+    translate: 0 0px;
+    gap: 10px;
+    z-index: 9999;
+    display: none;
+}
+
+.loader.loading {
+    display: flex;
+}
+
+.notification {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: none;
+    padding: 10px;
+    background-color: #161616;
+    color: #fff;
+}
+
+.notification.visible {
+    display: block;
+}
