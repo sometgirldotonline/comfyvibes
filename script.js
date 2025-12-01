@@ -142,7 +142,7 @@ async function onStateChange(event) {
                 document.body.style.setProperty('--alb', `url(https://i.ytimg.com/vi/${trackId}/maxresdefault.jpg)`);
                 updateTitleAndArtist(player.videoTitle, meta.artist)
             } else {
-                dUrl = new URL("http://files.novafurry.win/.ytprox.php");
+                dUrl = new URL("https://files.novafurry.win/.ytprox.php");
                 searchp = new URLSearchParams();
                 searchp.set("v", trackId);
                 document.body.style.setProperty('--alb', `url(https://i.ytimg.com/vi/${trackId}/maxresdefault.jpg)`);
@@ -288,7 +288,7 @@ async function addPlaylist(playlist) {
     const playlistId = plsid;
     console.log(playlistId)
     dUrl = new URL("https://corsproxy.io/")
-    ytU = new URL("http://youtube.com/playlist")
+    ytU = new URL("https://youtube.com/playlist")
     ytuS = new URLSearchParams()
     ytuS.set("list", playlistId)
     ytU.search = ytuS
