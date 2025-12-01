@@ -1,5 +1,15 @@
+// --- Lyrics and Metadata Cache ---
+const lyricsCache = {};
+const metadataCache = {};
+
 const youtubedomains = ["youtube.com", "www.youtube.com", "music.youtube.com", "m.youtube.com"]
 const youtubepaths = ["/watch", "/playlist"]
+
+function toSeconds(t) {
+    const [m, rest] = t.split(":");
+    return Number(m) * 60 + Number(rest);
+}
+
 // initialise DB
 
 const db = new Dexie("comfyvibes")
@@ -86,45 +96,195 @@ function onPlayerError(event) {
         console.log("An unknown error occurred:", errorCode);
     }
 }
-// Called on state changes
-async function onStateChange(event) {
-    console.log("Player state:", player.getPlayerState());
-    dUrl = new URL("http://files.novafurry.win/.ytprox.php")
-    searchp = new URLSearchParams()
-    searchp.set("v", player.getVideoData().video_id)
-    document.body.style.setProperty('--alb', `url(https://i.ytimg.com/vi/${player.getVideoData().video_id}/maxresdefault.jpg)`)
-    dUrl.search = searchp
-    console.log(dUrl.href, searchp)
-    data = await fetch(dUrl)
-    dataEl = document.createElement("html")
-    dataEl.innerHTML = await data.text()
-    console.log(dataEl)
-    //console.log(dataEl.querySelectorAll("span"))
-    //console.log(dataEl.querySelector('span[itemprop]')).getAttribute("content").replace(" - Topic", "").trim()
-    try {
-        Array.from(document.querySelectorAll(".data .title")).forEach(el => { el.textContent = player.videoTitle })
-        Array.from(document.querySelectorAll(".data .artist")).forEach(el => { el.textContent = dataEl.querySelector('[itemprop="author"] [itemprop="name"]').getAttribute("content").replace(" - Topic", "").trim() })
+// Debounced onStateChange to prevent rapid repeated actions
+let lastPlayerState = null;
+let stateChangeTimeout = null;
+function scoreMatch(player,d) {
+    console.log(d)
+    let score = 0
+    const title = player.videoTitle.toLowerCase()
+    const tn = d.trackName || d.name
+    if (title.includes(tn.toLowerCase())) score += 5
+    if (title.includes(d.artistName.toLowerCase())) score += 4
 
-    }
-    catch (e) {
-        console.log(e)
-    }
-    if (player.getPlayerState() == 2 || player.getPlayerState() == 5) {
-        onPPause()
-    }
-    else if (![-1, 3, 5].includes(player.getPlayerState())) {
-        onPPlay()
-    }
-    if (player.getPlayerState() == 1) {
-        onPPlay()
-    }
-    if (player.getPlayerState() == -1) {
-        document.querySelector(".tv .notification").innerText = `Skipped "${player.videoTitle}": embedding blocked by copyright holder.`
-        document.querySelector(".tv .notification").classList.add("visible")
-        setTimeout(() => { document.querySelector(".tv .notification").classList.remove("visible") }, 5000)
-        player.nextVideo()
-    }
+    // duration bonus if within ~2s
+    if (Math.abs(player.getDuration() - d.duration) < 2) score += 6
+
+    return score
 }
+
+function updateTitleAndArtist(title, artist) {
+    Array.from(document.querySelectorAll(".data .title")).forEach(el => { el.textContent = title });
+    Array.from(document.querySelectorAll(".data .artist")).forEach(el => { el.textContent = artist });
+}
+async function onStateChange(event) {
+    const currentState = player.getPlayerState();
+    if (currentState === lastPlayerState) {
+        return;
+    }
+    lastPlayerState = currentState;
+    if (stateChangeTimeout) {
+        clearTimeout(stateChangeTimeout);
+        stateChangeTimeout = null;
+    }
+    // Debounce state changes by 100ms
+    stateChangeTimeout = setTimeout(async () => {
+        console.log("Player state:", currentState);
+        if (currentState == 2 || currentState == 5) {
+            onPPause();
+        } else if (![-1, 3, 5].includes(currentState)) {
+            onPPlay();
+        }
+        if (currentState == 1) {
+            const trackId = player.getVideoData().video_id;
+            window.lyrics = [];
+            onPPlay();
+            document.querySelector(".lyrics").style.display = "none";
+            document.querySelector(".lyrics").innerText = ""
+            // --- Metadata Caching ---
+            if (metadataCache[trackId]) {
+                const meta = metadataCache[trackId];
+                document.body.style.setProperty('--alb', `url(https://i.ytimg.com/vi/${trackId}/maxresdefault.jpg)`);
+                updateTitleAndArtist(player.videoTitle, meta.artist)
+            } else {
+                dUrl = new URL("http://files.novafurry.win/.ytprox.php");
+                searchp = new URLSearchParams();
+                searchp.set("v", trackId);
+                document.body.style.setProperty('--alb', `url(https://i.ytimg.com/vi/${trackId}/maxresdefault.jpg)`);
+                dUrl.search = searchp;
+                data = await fetch(dUrl);
+                dataEl = document.createElement("html");
+                dataEl.innerHTML = await data.text();
+                try {
+                    const artist = dataEl.querySelector('[itemprop="author"] [itemprop="name"]').getAttribute("content").replace(" - Topic", "").trim();
+                    metadataCache[trackId] = { artist };
+                    updateTitleAndArtist(player.videoTitle, artist)
+                } catch (e) { console.log(e); }
+            }
+            // --- Lyrics Caching ---
+            if (lyricsCache[trackId]) {
+                window.lyrics = lyricsCache[trackId];
+                if (window.lyrics.length > 0) {
+                    document.querySelector(".lyrics").style.display = "inline-block";
+                    startSync();
+                }
+                currentIndex = 0;
+            } else {
+                lrcLibUrl = new URL("https://lrclib.net/api/search");
+                lrcLibSearch = new URLSearchParams();
+                lrcLibSearch.set("q", player.videoTitle);
+                lrcLibUrl.search = lrcLibSearch;
+                window.lrclibData = await (await fetch(lrcLibUrl)).json();
+                lrcIndex = -1;
+                foundResult = false;
+                let bestIndex = -1;
+                let bestScore = -1;
+                results = window.lrclibData;
+                for (let i = 0; i < results.length; i++) {
+                    const s = scoreMatch(player, results[i]);
+                    if (s > bestScore) {
+                        bestScore = s;
+                        bestIndex = i;
+                    }
+                }
+                if (bestScore > 4) {
+                    lrcIndex = bestIndex;
+                    foundResult = true;
+                }
+                if (!foundResult && lrcIndex == -1) { return 0; }
+                window.lyrics = [];
+                if (window.lrclibData[bestIndex].syncedLyrics.length > 0) {
+                    window.lrclibData[lrcIndex].syncedLyrics.split("\n").forEach((lyr) => {
+                        let [stamp, ...textParts] = lyr.split(" ");
+                        let text = textParts.join(" ");
+                        stamp = toSeconds(stamp.replace("[", "").replace("]", ""));
+                        window.lyrics.push({ time: stamp, lyric: text });
+                    });
+                    lyricsCache[trackId] = window.lyrics;
+                    document.querySelector(".lyrics").style.display = "inline-block";
+                    startSync();
+                }
+                currentIndex = 0;
+            }
+        }
+        // Display lyrics and metadata from cache on unpause
+        function onUnpause() {
+            // const trackId = player.getVideoData().video_id;
+            // if (lyricsCache[trackId]) {
+            //     window.lyrics = lyricsCache[trackId];
+            //     if (window.lyrics.length > 0) {
+            //         document.querySelector(".lyrics").style.display = "inline-block";
+            //         startSync();
+            //     }
+            // }
+        }
+        if (currentState == -1) {
+            displayNotification(`Skipped "${player.videoTitle}": Could not play (embedding blocked?)`)
+            player.nextVideo();
+        }
+    }, 100);
+}
+
+function scheduleNLyric() {
+    if (currentIndex >= lyrics.length) return
+    now = player.getCurrentTime()
+    target = window.lyrics[currentIndex].time
+    delay = (target - now)
+    if (delay < 0) delay = 0
+    setTimeout(() => {
+        console.log(window.lyrics[currentIndex])
+        document.querySelector(".lyrics").innerText = window.lyrics[currentIndex].lyric
+        currentIndex += 1
+        scheduleNLyric()
+    }, delay * 1000)
+}
+
+function findClosestLyricTo(t) {
+    let lo = 0;
+    let hi = window.lyrics.length - 1;
+    let ans = hi;
+
+    while (lo <= hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (window.lyrics[mid].time >= t) {
+            ans = mid;
+            hi = mid - 1;
+        } else {
+            lo = mid + 1;
+        }
+    }
+
+    return ans;
+}
+
+
+let currentIndex = 0;
+
+function updateLyrics() {
+    const t = player.getCurrentTime();
+
+    // Advance index if next lyric's time has passed
+    while (currentIndex < window.lyrics.length && t >= window.lyrics[currentIndex].time) {
+        document.querySelector(".lyrics").innerText = window.lyrics[currentIndex].lyric;
+        currentIndex++;
+    }
+
+    requestAnimationFrame(updateLyrics);
+}
+
+function startSync() {
+    // Start from closest lyric to current time
+    currentIndex = findClosestLyricTo(player.getCurrentTime());
+    updateLyrics();
+}
+
+
+function startSyncOld() {
+    currentIndex = findClosestLyricTo(player.getCurrentTime())
+    console.log("Starting at", currentIndex)
+    scheduleNLyric()
+}
+
 
 async function addPlaylist(playlist) {
     let dbid, plsid;
@@ -159,12 +319,12 @@ async function addPlaylist(playlist) {
     d = await (await fetch(dUrl)).text()
     data = document.createElement("html")
     data.innerHTML = d
-    console.log(data.querySelector("meta[property='og:image']"),data.querySelector("meta[property='og:title']"), data.querySelector("meta"))
+    console.log(data.querySelector("meta[property='og:image']"), data.querySelector("meta[property='og:title']"), data.querySelector("meta"))
     try {
         image = data.querySelector("meta[property='og:image']").getAttribute("content")
         title = data.querySelector("meta[property='og:title']").getAttribute("content")
         li = document.createElement("li")
-        li.setAttribute("id",dbid)
+        li.setAttribute("id", dbid)
         img = document.createElement("img")
         img.setAttribute("src", image)
         tit = document.createElement("span")
@@ -174,7 +334,7 @@ async function addPlaylist(playlist) {
         btn = document.createElement("button")
         btn.setAttribute("class", "material-symbols-outlined")
         btn.innerText = "delete"
-        btn.onclick = async ()=>{
+        btn.onclick = async () => {
             document.querySelector(".loader").classList.add("loading")
             await db.playlists.delete(dbid)
             rebuildPls()
@@ -182,7 +342,7 @@ async function addPlaylist(playlist) {
         }
         li.appendChild(btn)
         li.onclick = (ev) => {
-            if(ev.target.tagName == "BUTTON"){
+            if (ev.target.tagName == "BUTTON") {
                 return
             }
             document.querySelector(".loader").classList.add("loading")

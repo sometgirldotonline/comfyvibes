@@ -651,3 +651,21 @@ body:has(.notplayed) .playerbar {
   border: 0px;
   padding: 0px
 }
+
+.lyrics{
+    position: absolute;
+    bottom: 20px;
+    color:#fff;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 10px;
+    font-weight: bold;
+    font-size: 1.2em;
+    max-width: 90%;
+    display: none;
+    width: 90%;
+    white-space: normal;
+    word-break: break-word;
+    height: fit-content;
+    overflow: hidden;
+    text-align: center;
+}
