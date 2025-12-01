@@ -1,4 +1,3 @@
-// --- Lyrics and Metadata Cache ---
 const lyricsCache = {};
 const metadataCache = {};
 
@@ -10,7 +9,13 @@ function toSeconds(t) {
     return Number(m) * 60 + Number(rest);
 }
 
-// initialise DB
+function secondsToMinsAndSeconds(seconds) {
+  millis = seconds * 1000
+  var minutes = Math.floor(millis / 60000);
+  var seconds = ((millis % 60000) / 1000).toFixed(0);
+  return minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+}
+
 
 const db = new Dexie("comfyvibes")
 
@@ -25,13 +30,10 @@ function displayNotification(text) {
 }
 
 window.onerror = displayNotification
-
-// Load YouTube IFrame API asynchronously
 const tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
 document.head.appendChild(tag);
 
-// Called when API is ready
 function onYouTubeIframeAPIReady() {
     window.player = new YT.Player('player', {
         playerVars: {
@@ -60,10 +62,8 @@ function onPPlay() {
         document.querySelector(".notplayed").remove()
     }
 }
-// Called when player is ready
 function onPlayerReady(event) {
     window.player = event.target;
-    //setTimeout(()=>{window.player.cuePlaylist("PL5Pk318UKwyKd2ehcr0qHDsqNRmdyVgAV",0,0);}, 500)
     window.player.setShuffle(true);
     window.player.setLoop(true);
     window.player.playVideo(); // attempt autoplay
@@ -73,7 +73,7 @@ function onPlayerReady(event) {
                 prog.setAttribute("min", 0)
                 prog.setAttribute("max", player.getDuration())
                 prog.setAttribute("value", player.getCurrentTime())
-
+                document.querySelector("span.timeview").innerText = `${secondsToMinsAndSeconds(player.getCurrentTime())} / ${secondsToMinsAndSeconds(player.getDuration())}`
             }
             else {
                 prog.removeAttribute("min")
@@ -96,7 +96,6 @@ function onPlayerError(event) {
         console.log("An unknown error occurred:", errorCode);
     }
 }
-// Debounced onStateChange to prevent rapid repeated actions
 let lastPlayerState = null;
 let stateChangeTimeout = null;
 function scoreMatch(player,d) {
@@ -106,8 +105,6 @@ function scoreMatch(player,d) {
     const tn = d.trackName || d.name
     if (title.includes(tn.toLowerCase())) score += 5
     if (title.includes(d.artistName.toLowerCase())) score += 4
-
-    // duration bonus if within ~2s
     if (Math.abs(player.getDuration() - d.duration) < 2) score += 6
 
     return score
@@ -127,7 +124,6 @@ async function onStateChange(event) {
         clearTimeout(stateChangeTimeout);
         stateChangeTimeout = null;
     }
-    // Debounce state changes by 100ms
     stateChangeTimeout = setTimeout(async () => {
         console.log("Player state:", currentState);
         if (currentState == 2 || currentState == 5) {
@@ -141,7 +137,6 @@ async function onStateChange(event) {
             onPPlay();
             document.querySelector(".lyrics").style.display = "none";
             document.querySelector(".lyrics").innerText = ""
-            // --- Metadata Caching ---
             if (metadataCache[trackId]) {
                 const meta = metadataCache[trackId];
                 document.body.style.setProperty('--alb', `url(https://i.ytimg.com/vi/${trackId}/maxresdefault.jpg)`);
@@ -161,7 +156,6 @@ async function onStateChange(event) {
                     updateTitleAndArtist(player.videoTitle, artist)
                 } catch (e) { console.log(e); }
             }
-            // --- Lyrics Caching ---
             if (lyricsCache[trackId]) {
                 window.lyrics = lyricsCache[trackId];
                 if (window.lyrics.length > 0) {
@@ -207,17 +201,6 @@ async function onStateChange(event) {
                 currentIndex = 0;
             }
         }
-        // Display lyrics and metadata from cache on unpause
-        function onUnpause() {
-            // const trackId = player.getVideoData().video_id;
-            // if (lyricsCache[trackId]) {
-            //     window.lyrics = lyricsCache[trackId];
-            //     if (window.lyrics.length > 0) {
-            //         document.querySelector(".lyrics").style.display = "inline-block";
-            //         startSync();
-            //     }
-            // }
-        }
         if (currentState == -1) {
             displayNotification(`Skipped "${player.videoTitle}": Could not play (embedding blocked?)`)
             player.nextVideo();
@@ -262,8 +245,6 @@ let currentIndex = 0;
 
 function updateLyrics() {
     const t = player.getCurrentTime();
-
-    // Advance index if next lyric's time has passed
     while (currentIndex < window.lyrics.length && t >= window.lyrics[currentIndex].time) {
         document.querySelector(".lyrics").innerText = window.lyrics[currentIndex].lyric;
         currentIndex++;
@@ -273,7 +254,6 @@ function updateLyrics() {
 }
 
 function startSync() {
-    // Start from closest lyric to current time
     currentIndex = findClosestLyricTo(player.getCurrentTime());
     updateLyrics();
 }
