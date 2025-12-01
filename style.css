@@ -248,16 +248,13 @@ input.prog{
     box-shadow: 0px -2px 4px rgba(255, 255, 255, 0.25);
     padding: 5px;
     white-space: nowrap;
-    /* Prevents text from wrapping to the next line */
     overflow: hidden;
-    /* Hides any content that overflows the element's box */
     text-overflow: ellipsis;
     box-sizing: border-box;
 }
 
 .remote .playerbar>*:not(.alb) {
     min-width: 0;
-    /* allows flex items to shrink below their content */
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -274,7 +271,6 @@ input.prog{
     background-position: center;
 }
 
-/* Make non-data items square and keep the `.data` area centered */
 .remote .playerbar>*:not(.data) {
     flex: 0 0 auto;
     height: 100%;
@@ -356,11 +352,7 @@ body:not(:has(.paused)) .play-only {
 
     & img {
         aspect-ratio: 1 / 1;
-        /* min-height: 50px; */
-        /* min-width: 50px; */
         height: 50px;
-        /* width: auto; */
-        /* max-height: 2ch; */
         object-fit: cover;
     }
 
@@ -368,14 +360,11 @@ body:not(:has(.paused)) .play-only {
         font-size: 1.2em;
         vertical-align: middle;
         white-space: nowrap;
-        /* Prevents text from wrapping to the next line */
         overflow: hidden;
-        /* Hides any content that overflows the element's box */
         text-overflow: ellipsis;
     }
 }
 
-/* Ensure playlist text is vertically centered inside the flex row */
 .playlists li span {
     display: inline-flex;
     align-items: center;
@@ -491,10 +480,6 @@ button * {
 
     & * {
         width: fit-content;
-    }
-
-    & .time {
-        /* width: calc(100%); */
     }
 }
 
